@@ -20,7 +20,7 @@ data "aws_ami" "ubuntu" {
 }
 
 output "ip_addr" {
-  value = aws_instance.ec2-cs291-com.public_ip
+  value = aws_eip.ec2-cs291-com.public_ip
 }
 
 provider "aws" {
@@ -40,7 +40,8 @@ resource "aws_instance" "ec2-cs291-com" {
   tags = {
     Name = "ec2.cs291.com"
   }
-  vpc_security_group_ids = [aws_security_group.allow_ssh.id]
+  user_data = file("user_data.sh")
+  vpc_security_group_ids = [aws_security_group.allow_ssh.id, aws_security_group.outbound_http.id, aws_security_group.outbound_tls.id]
 }
 
 resource "aws_security_group" "allow_ssh" {
@@ -55,5 +56,35 @@ resource "aws_security_group" "allow_ssh" {
   name = "allow_ssh"
   tags = {
     Name = "allow_ssh"
+  }
+}
+
+resource "aws_security_group" "outbound_http" {
+  description = "Allow HTTP outbound traffic"
+  egress {
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "HTTP to anywhere"
+    from_port = 80
+    protocol = "tcp"
+    to_port = 80
+  }
+  name = "outbound_http"
+  tags = {
+    Name = "outbound_http"
+  }
+}
+
+resource "aws_security_group" "outbound_tls" {
+  description = "Allow TLS outbound traffic"
+  egress {
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "TLS to anywhere"
+    from_port = 443
+    protocol = "tcp"
+    to_port = 443
+  }
+  name = "outbound_tls"
+  tags = {
+    Name = "outbound_tls"
   }
 }
