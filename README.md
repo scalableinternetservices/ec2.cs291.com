@@ -23,9 +23,11 @@ Make a list of teamnames in teams.txt. Then run:
 
 ```sh
 mkdir credentials
+cd credentials
 for team in $(cat ../teams.txt); do
     scalable_admin aws $team
 done
+cd -
 ```
 
 ## Rsync credentials to jumpbox
