@@ -19,6 +19,16 @@ data "aws_ami" "ubuntu" {
   owners = ["137112412989"] # Amazon
 }
 
+data "aws_iam_policy_document" "lambda-role-policy" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      identifiers = ["lambda.amazonaws.com"]
+      type = "Service"
+    }
+  }
+}
+
 output "ip_addr" {
   value = aws_eip.ec2-cs291-com.public_ip
 }
@@ -30,6 +40,16 @@ provider "aws" {
 resource "aws_eip" "ec2-cs291-com" {
   instance = aws_instance.ec2-cs291-com.id
   vpc = true
+}
+
+resource "aws_iam_role" "lambda" {
+  assume_role_policy = data.aws_iam_policy_document.lambda-role-policy.json
+  name = "ScalableInternetServicesLambda"
+}
+
+resource "aws_iam_role_policy_attachment" "aws-lambda-basic-execution-role" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  role = aws_iam_role.lambda.name
 }
 
 resource "aws_instance" "ec2-cs291-com" {
