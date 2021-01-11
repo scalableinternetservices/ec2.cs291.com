@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
 TEAMNAME=$(whoami)
-TSUNG_AMI=ami-07d75a428f8fc15fd
+TSUNG_AMI=ami-009897500d3692850
 
 if [ $# -eq 0 ]; then
     instance_type=t3.micro
@@ -18,9 +18,9 @@ result=$(aws ec2 run-instances \
     --instance-type=$instance_type \
     --key-name=$TEAMNAME \
     --monitoring=Enabled=True \
-    --security-groups=allow_ssh \
+    --security-groups='["allow_http", "allow_ssh", "outbound_http", "outbound_tls"]' \
     --tag-specifications='[{"ResourceType":"instance","Tags":[{"Key":"Name","Value":"tsung-'$TEAMNAME'"}]},{"ResourceType":"volume","Tags":[{"Key":"Name","Value":"tsung-'$TEAMNAME'"}]}]')
 
 ip=$(echo $result | jq -r '.Instances[].PrivateIpAddress')
 
-echo -e "Instance is launching. In a few moments connect via:\nssh -i ~/.ssh/$TEAMNAME.pem ec2-user@$ip"
+echo -e "Instance is launching. In a few moments connect via:\nssh ec2-user@$ip"

@@ -50,6 +50,8 @@ set_ssh_config() {
     echo $public_key | sudo tee $authorized_keys_path > /dev/null
     sudo chown $teamname:$teamname $authorized_keys_path
     sudo cp $ssh_key_path $ssh_path
+    sudo cp $ssh_key_path $ssh_path/id_rsa
+    sudo chown $teamname:$teamname $ssh_path/id_rsa
     sudo chown $teamname:$teamname $ssh_path/$teamname.pem
 }
 
