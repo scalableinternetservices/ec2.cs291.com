@@ -36,10 +36,10 @@ cd -
 rsync -auv credentials ec2-user@ec2.cs291.com:
 ```
 
-## Copy prepare_accounts.sh script
+## Copy scripts
 
 ```sh
-scp prepare_accounts.sh ec2-user@ec2.cs291.com:
+rsync -auv scripts/ ec2-user@ec2.cs291.com:
 ```
 
 ## Run prepare_acounts.sh script
