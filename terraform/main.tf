@@ -61,7 +61,7 @@ resource "aws_instance" "ec2-cs291-com" {
     Name = "ec2.cs291.com"
   }
   user_data = file("user_data.sh")
-  vpc_security_group_ids = [aws_security_group.allow_ssh.id, aws_security_group.outbound_http.id, aws_security_group.outbound_tls.id]
+  vpc_security_group_ids = [aws_security_group.allow_ssh.id, aws_security_group.outbound_http.id, aws_security_group.outbound_ssh.id, aws_security_group.outbound_tls.id]
 }
 
 resource "aws_security_group" "allow_ssh" {
@@ -91,6 +91,21 @@ resource "aws_security_group" "outbound_http" {
   name = "outbound_http"
   tags = {
     Name = "outbound_http"
+  }
+}
+
+resource "aws_security_group" "outbound_ssh" {
+  description = "Allow SSH outbound traffic"
+  egress {
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "SSH to anywhere"
+    from_port = 22
+    protocol = "tcp"
+    to_port = 22
+  }
+  name = "outbound_ssh"
+  tags = {
+    Name = "outbound_ssh"
   }
 }
 
