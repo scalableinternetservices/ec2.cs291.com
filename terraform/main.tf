@@ -1,3 +1,11 @@
+terraform {
+  backend "s3" {
+  bucket = "cs291a"
+  key = "terraform/ec2.cs291.com.tfstate"
+  region = "us-west-2"
+  }
+}
+
 data "aws_ami" "ubuntu" {
   most_recent = true
 
@@ -57,11 +65,29 @@ resource "aws_instance" "ec2-cs291-com" {
   ebs_optimized = true
   instance_type = "t4g.micro"
   key_name = "admin"
+  lifecycle {
+    ignore_changes = [user_data]
+  }
   tags = {
     Name = "ec2.cs291.com"
   }
   user_data = file("user_data.sh")
   vpc_security_group_ids = [aws_security_group.allow_ssh.id, aws_security_group.outbound_http.id, aws_security_group.outbound_ssh.id, aws_security_group.outbound_tls.id]
+}
+
+resource "aws_security_group" "allow_http" {
+  description = "Allow HTTP inbound traffic"
+  ingress {
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "HTTP from anywhere"
+    from_port = 80
+    protocol = "tcp"
+    to_port = 80
+  }
+  name = "allow_http"
+  tags = {
+    Name = "allow_http"
+  }
 }
 
 resource "aws_security_group" "allow_ssh" {
