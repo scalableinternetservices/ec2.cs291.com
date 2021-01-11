@@ -62,6 +62,7 @@ resource "aws_iam_role_policy_attachment" "aws-lambda-basic-execution-role" {
 
 resource "aws_instance" "ec2-cs291-com" {
   ami = data.aws_ami.ubuntu.id
+  disable_api_termination = true
   ebs_optimized = true
   instance_type = "t4g.micro"
   key_name = "admin"
