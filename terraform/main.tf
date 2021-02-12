@@ -16,7 +16,7 @@ data "aws_ami" "ubuntu" {
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm-*-arm64-gp2"]
+    values = ["amzn2-ami-hvm-2.0.2020*-arm64-gp2"]  # Change "2.0.2020" to update to latest
   }
 
   filter {
@@ -73,7 +73,7 @@ resource "aws_instance" "ec2-cs291-com" {
     Name = "ec2.cs291.com"
   }
   user_data = file("user_data.sh")
-  vpc_security_group_ids = [aws_security_group.allow_ssh.id, aws_security_group.outbound_http.id, aws_security_group.outbound_ssh.id, aws_security_group.outbound_tls.id]
+  vpc_security_group_ids = [aws_security_group.allow_ssh.id, aws_security_group.outbound_http.id, aws_security_group.outbound_smtp.id, aws_security_group.outbound_ssh.id, aws_security_group.outbound_tls.id]
 }
 
 resource "aws_security_group" "allow_http" {
@@ -118,6 +118,21 @@ resource "aws_security_group" "outbound_http" {
   name = "outbound_http"
   tags = {
     Name = "outbound_http"
+  }
+}
+
+resource "aws_security_group" "outbound_smtp" {
+  description = "Allow SMTP outbound traffic"
+  egress {
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "SMTP to anywhere"
+    from_port = 25
+    protocol = "tcp"
+    to_port = 25
+  }
+  name = "outbound_smtp"
+  tags = {
+    Name = "outbound_smtp"
   }
 }
 
