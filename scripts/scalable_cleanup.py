@@ -17,7 +17,7 @@ class UTC(tzinfo):
 NOW = datetime.now(UTC())
 
 
-def delete_ec2_instances(aws):
+def delete_tsung_ec2_instances(aws):
     ec2 = aws.create_client("ec2", REGION)
     ids = []
     for reservation in ec2.describe_instances()["Reservations"]:
@@ -40,8 +40,7 @@ def delete_ec2_instances(aws):
         ec2.terminate_instances(InstanceIds=ids)
 
 
-def delete_elastic_beanstalk_deployments(aws):
-    # Terminate any deployment that hasn't been updated within an hour
+def delete_inactive_elastic_beanstalk_deployments(aws):
     eb = aws.create_client("elasticbeanstalk", REGION)
     for deployment in eb.describe_environments()["Environments"]:
         if (
@@ -54,6 +53,50 @@ def delete_elastic_beanstalk_deployments(aws):
             f"Last Update: {NOW - deployment['DateUpdated']} Terminating {deployment['EnvironmentName']} ({deployment['Status']})"
         )
         eb.terminate_environment(EnvironmentId=deployment["EnvironmentId"])
+
+
+def delete_inactive_elasticache_instances(aws):
+    cache = aws.create_client("elasticache", REGION)
+    clusters_to_delete = {}
+    replication_groups_to_delete = {}
+    for cluster in cache.describe_cache_clusters(ShowCacheNodeInfo=True)[
+        "CacheClusters"
+    ]:
+        if cluster["CacheClusterStatus"] in {"deleting"}:
+            continue
+
+        if cluster["Engine"] == "redis":
+            assert len(cluster["CacheNodes"]) == 1
+            replication_groups_to_delete.setdefault(
+                cluster["ReplicationGroupId"], cluster["CacheClusterCreateTime"]
+            )
+            replication_groups_to_delete[cluster["ReplicationGroupId"]] = max(
+                replication_groups_to_delete[cluster["ReplicationGroupId"]],
+                cluster["CacheClusterCreateTime"],
+            )
+        else:
+            import pprint
+
+            pprint.pprint(cluster)
+            assert len(cluster["CacheNodes"]) == cluster["NumCacheNodes"]
+            for node in cluster["CacheNodes"]:
+                clusters_to_delete.setdefault(
+                    cluster["CacheClusterId"], node["CacheNodeCreateTime"]
+                )
+                clusters_to_delete[cluster["CacheClusterId"]] = max(
+                    clusters_to_delete[cluster["CacheClusterId"]],
+                    node["CacheNodeCreateTime"],
+                )
+
+    for cluster, last_created in clusters_to_delete.items():
+        if NOW - last_created >= timedelta(minutes=110):
+            print(f"Deleting memcached cluster {cluster}")
+            cache.delete_cache_cluster(CacheClusterId=cluster)
+
+    for replication_group, last_created in replication_groups_to_delete.items():
+        if NOW - last_created >= timedelta(minutes=110):
+            print(f"Deleting redis cluster {replication_group}")
+            cache.delete_replication_group(ReplicationGroupId=replication_group)
 
 
 def delete_orphaned_databases(rds):
@@ -85,9 +128,11 @@ def delete_snapshots(rds):
 def main():
     aws = botocore.session.Session(profile="scalableinternetservices-admin")
 
+    delete_tsung_ec2_instances(aws)
+    delete_inactive_elasticache_instances(aws)
+    delete_inactive_elastic_beanstalk_deployments(aws)
+
     rds = aws.create_client("rds", REGION)
-    delete_ec2_instances(aws)
-    delete_elastic_beanstalk_deployments(aws)
     delete_orphaned_databases(rds)
     delete_snapshots(rds)
     return 0
