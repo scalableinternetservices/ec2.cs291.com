@@ -22,12 +22,12 @@ def delete_tsung_ec2_instances(aws):
     ids = []
     for reservation in ec2.describe_instances()["Reservations"]:
         for instance in reservation["Instances"]:
-            if not [x for x in instance["SecurityGroups"] if x["GroupName"] == "tsung"]:
+            if not [x for x in instance["SecurityGroups"] if x["GroupName"] == "allow_http"]:
                 break
 
             duration = NOW - instance["LaunchTime"]
             if instance["State"]["Name"] in {"terminated"} or duration < timedelta(
-                minutes=300
+                minutes=240
             ):
                 continue
             if instance["State"]["Name"] not in {"running"}:

@@ -21,6 +21,12 @@ result=$(aws ec2 run-instances \
     --security-groups='["allow_http", "allow_ssh", "outbound_http", "outbound_tls"]' \
     --tag-specifications='[{"ResourceType":"instance","Tags":[{"Key":"Name","Value":"tsung-'$TEAMNAME'"}]},{"ResourceType":"volume","Tags":[{"Key":"Name","Value":"tsung-'$TEAMNAME'"}]}]')
 
-ip=$(echo $result | jq -r '.Instances[].PrivateIpAddress')
+id=$(echo $result | jq -r '.Instances[].InstanceId')
 
-echo -e "Instance is launching. In a few moments connect via:\nssh ec2-user@$ip"
+echo "Instance $id is launching. Obtaining IP address..."
+
+public_ip=$(aws ec2 describe-instances --filters Name=instance-id,Values=$id | jq -r .Reservations[].Instances[].PublicIpAddress)
+
+
+echo -e "SSH\n---\nssh ec2-user@$public_ip\n"
+echo -e "HTTP\n----\nhttp://$public_ip"
