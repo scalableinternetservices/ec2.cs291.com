@@ -30,13 +30,13 @@ ssh ec2-user@ec2.cs291.com 'sudo mv launch_tsung.sh /usr/bin/'
 
 ## Create Credential Files
 
-Make a list of teamnames in `teams.txt` and then run:
+Make a list of teamnames in `usernames.txt` and then run:
 
 ```sh
 mkdir credentials
 cd credentials
-for team in $(cat ../teams.txt); do
-    scalable_admin aws $team
+for username in $(cat ../usernames.txt); do
+    scalable_admin aws $username
 done
 cd -
 ```
@@ -51,4 +51,18 @@ rsync -auv credentials ec2-user@ec2.cs291.com:
 
 ```sh
 ssh ec2-user@ec2.cs291.com ./prepare_accounts.sh
+```
+
+
+## Share Credentials
+
+Follow these instructions to fetch a credentials json file: https://pythonhosted.org/PyDrive/quickstart.html#authentication
+
+Move that file to `$HOME/.config/share_credentials.json`.
+
+
+```python
+cd share_credentials
+pip install -r requirements.txt
+
 ```
