@@ -37,8 +37,9 @@ data "aws_iam_policy_document" "lambda-role-policy" {
   }
 }
 
-output "ip_addr" {
-  value = aws_eip.ec2-cs291-com.public_ip
+data "aws_route53_zone" "cs291-com" {
+  name = "cs291.com."
+  private_zone = false
 }
 
 provider "aws" {
@@ -56,11 +57,6 @@ resource "aws_default_route_table" "cs291a" {
   }
 }
 
-resource "aws_eip" "ec2-cs291-com" {
-  instance = aws_instance.ec2-cs291-com.id
-  vpc = true
-}
-
 resource "aws_iam_role" "lambda" {
   assume_role_policy = data.aws_iam_policy_document.lambda-role-policy.json
   name = "ScalableInternetServicesLambda"
@@ -72,6 +68,7 @@ resource "aws_iam_role_policy_attachment" "aws-lambda-basic-execution-role" {
 }
 
 resource "aws_instance" "ec2-cs291-com" {
+  associate_public_ip_address = true
   ami = data.aws_ami.ubuntu.id
   depends_on = [aws_internet_gateway.cs291a]
   disable_api_termination = true
@@ -94,6 +91,14 @@ resource "aws_internet_gateway" "cs291a" {
     Name = "cs291a"
   }
   vpc_id = aws_vpc.cs291a.id
+}
+
+resource "aws_route53_record" "ec2-cs291-com" {
+  name    = "ec2.cs291.com"
+  ttl     = "300"
+  type    = "A"
+  records = [aws_instance.ec2-cs291-com.public_ip]
+  zone_id = data.aws_route53_zone.cs291-com.zone_id
 }
 
 resource "aws_security_group" "allow_http" {

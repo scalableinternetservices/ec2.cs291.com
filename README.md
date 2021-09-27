@@ -15,9 +15,6 @@ terraform init
 AWS_PROFILE=scalableinternetservices-admin terraform apply
 ```
 
-The output of the above command will contain the IP address of the jumpbox. Create or update an `A` record for `ec2.cs291.com` to point to that IP address.
-
-
 ## Copy scripts
 
 ```sh
@@ -33,7 +30,7 @@ ssh ec2-user@ec2.cs291.com 'sudo mv launch_tsung.sh /usr/bin/'
 
 ## Create Credential Files
 
-Make a list of teamnames in teams.txt. Then run:
+Make a list of teamnames in `teams.txt` and then run:
 
 ```sh
 mkdir credentials
