@@ -16,7 +16,7 @@ data "aws_ami" "ubuntu" {
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm-2.0.2020*-arm64-gp2"]  # Change "2.0.2020" to update to latest
+    values = ["amzn2-ami-hvm-2.0.2021*-arm64-gp2"]  # Change "2.0.2021" to update to latest
   }
 
   filter {
@@ -45,6 +45,17 @@ provider "aws" {
   region = "us-west-2"
 }
 
+resource "aws_default_route_table" "cs291a" {
+  default_route_table_id = aws_vpc.cs291a.default_route_table_id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.cs291a.id
+  }
+  tags = {
+    Name = "cs291a"
+  }
+}
+
 resource "aws_eip" "ec2-cs291-com" {
   instance = aws_instance.ec2-cs291-com.id
   vpc = true
@@ -62,6 +73,7 @@ resource "aws_iam_role_policy_attachment" "aws-lambda-basic-execution-role" {
 
 resource "aws_instance" "ec2-cs291-com" {
   ami = data.aws_ami.ubuntu.id
+  depends_on = [aws_internet_gateway.cs291a]
   disable_api_termination = true
   ebs_optimized = true
   instance_type = "t4g.micro"
@@ -69,11 +81,19 @@ resource "aws_instance" "ec2-cs291-com" {
   lifecycle {
     ignore_changes = [user_data]
   }
+  subnet_id = aws_subnet.cs291a-a.id
   tags = {
     Name = "ec2.cs291.com"
   }
   user_data = file("user_data.sh")
   vpc_security_group_ids = [aws_security_group.allow_ssh.id, aws_security_group.outbound_http.id, aws_security_group.outbound_smtp.id, aws_security_group.outbound_ssh.id, aws_security_group.outbound_tls.id]
+}
+
+resource "aws_internet_gateway" "cs291a" {
+  tags = {
+    Name = "cs291a"
+  }
+  vpc_id = aws_vpc.cs291a.id
 }
 
 resource "aws_security_group" "allow_http" {
@@ -89,6 +109,7 @@ resource "aws_security_group" "allow_http" {
   tags = {
     Name = "allow_http"
   }
+  vpc_id = aws_vpc.cs291a.id
 }
 
 resource "aws_security_group" "allow_ssh" {
@@ -104,6 +125,7 @@ resource "aws_security_group" "allow_ssh" {
   tags = {
     Name = "allow_ssh"
   }
+  vpc_id = aws_vpc.cs291a.id
 }
 
 resource "aws_security_group" "outbound_http" {
@@ -119,6 +141,7 @@ resource "aws_security_group" "outbound_http" {
   tags = {
     Name = "outbound_http"
   }
+  vpc_id = aws_vpc.cs291a.id
 }
 
 resource "aws_security_group" "outbound_smtp" {
@@ -134,6 +157,7 @@ resource "aws_security_group" "outbound_smtp" {
   tags = {
     Name = "outbound_smtp"
   }
+  vpc_id = aws_vpc.cs291a.id
 }
 
 resource "aws_security_group" "outbound_ssh" {
@@ -149,6 +173,7 @@ resource "aws_security_group" "outbound_ssh" {
   tags = {
     Name = "outbound_ssh"
   }
+  vpc_id = aws_vpc.cs291a.id
 }
 
 resource "aws_security_group" "outbound_tls" {
@@ -163,5 +188,25 @@ resource "aws_security_group" "outbound_tls" {
   name = "outbound_tls"
   tags = {
     Name = "outbound_tls"
+  }
+  vpc_id = aws_vpc.cs291a.id
+}
+
+resource "aws_subnet" "cs291a-a" {
+  availability_zone = "us-west-2a"
+  cidr_block        = "10.0.0.0/18"
+  vpc_id = aws_vpc.cs291a.id
+
+  tags = {
+    Name = "cs291a-2a"
+  }
+}
+
+resource "aws_vpc" "cs291a" {
+  cidr_block = "10.0.0.0/16"
+  enable_dns_support = true
+  instance_tenancy = "default"
+  tags = {
+    Name = "cs291a"
   }
 }
