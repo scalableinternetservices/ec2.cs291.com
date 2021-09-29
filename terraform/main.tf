@@ -199,13 +199,24 @@ resource "aws_security_group" "outbound_tls" {
 
 resource "aws_subnet" "cs291a-a" {
   availability_zone = "us-west-2a"
-  cidr_block        = "10.0.0.0/18"
+  cidr_block = "10.0.0.0/18"
   vpc_id = aws_vpc.cs291a.id
 
   tags = {
     Name = "cs291a-2a"
   }
 }
+
+resource "aws_subnet" "cs291a-b" {
+  availability_zone = "us-west-2b"
+  cidr_block = "10.0.64.0/18"
+  vpc_id = aws_vpc.cs291a.id
+
+  tags = {
+    Name = "cs291a-2b"
+  }
+}
+
 
 resource "aws_vpc" "cs291a" {
   cidr_block = "10.0.0.0/16"
