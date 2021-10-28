@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
 TEAMNAME=$(whoami)
-TSUNG_AMI=ami-0085826a91a6d1ec3
+TSUNG_AMI=ami-0983761f3d0032a72
 
 if [ $# -eq 0 ]; then
     instance_type=t3.micro
