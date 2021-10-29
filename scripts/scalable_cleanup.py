@@ -22,7 +22,7 @@ def delete_tsung_ec2_instances(aws):
     ids = []
     for reservation in ec2.describe_instances()["Reservations"]:
         for instance in reservation["Instances"]:
-            if not [x for x in instance["SecurityGroups"] if x["GroupName"] == "allow_http"]:
+            if not [x for x in instance["SecurityGroups"] if x["GroupName"] == "tsung"]:
                 break
 
             duration = NOW - instance["LaunchTime"]
@@ -34,7 +34,6 @@ def delete_tsung_ec2_instances(aws):
                 print(f"Unknown state: {instance['State']['Name']}")
 
             name = next(x["Value"] for x in instance["Tags"] if x["Key"] == "Name")
-            print(f"Deleting EC2 instance {name} (Duration: {duration})")
             ids.append(instance["InstanceId"])
     if ids:
         ec2.terminate_instances(InstanceIds=ids)
@@ -49,9 +48,6 @@ def delete_inactive_elastic_beanstalk_deployments(aws):
             or NOW - deployment["DateUpdated"] < timedelta(minutes=110)
         ):
             continue
-        print(
-            f"Last Update: {NOW - deployment['DateUpdated']} Terminating {deployment['EnvironmentName']} ({deployment['Status']})"
-        )
         eb.terminate_environment(EnvironmentId=deployment["EnvironmentId"])
 
 
@@ -75,8 +71,6 @@ def delete_inactive_elasticache_instances(aws):
                 cluster["CacheClusterCreateTime"],
             )
         else:
-            import pprint
-
             pprint.pprint(cluster)
             assert len(cluster["CacheNodes"]) == cluster["NumCacheNodes"]
             for node in cluster["CacheNodes"]:
@@ -121,12 +115,10 @@ def delete_snapshots(rds):
             deleted += 1
         elif snapshot["SnapshotType"] != "automated":
             pprint.pprint(snapshot)
-    if deleted > 0:
-        print(f"Deleted snapshots: {deleted}")
 
 
 def main():
-    aws = botocore.session.Session(profile="scalableinternetservices-admin")
+    aws = botocore.session.Session()
 
     delete_tsung_ec2_instances(aws)
     delete_inactive_elasticache_instances(aws)
