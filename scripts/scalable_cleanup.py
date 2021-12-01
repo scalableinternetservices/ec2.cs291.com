@@ -30,7 +30,7 @@ def delete_tsung_ec2_instances(aws):
                 minutes=240
             ):
                 continue
-            if instance["State"]["Name"] not in {"running"}:
+            if instance["State"]["Name"] not in {"running", "stopped"}:
                 print(f"Unknown state: {instance['State']['Name']}")
 
             name = next(x["Value"] for x in instance["Tags"] if x["Key"] == "Name")
@@ -49,6 +49,21 @@ def delete_inactive_elastic_beanstalk_deployments(aws):
         ):
             continue
         eb.terminate_environment(EnvironmentId=deployment["EnvironmentId"])
+
+
+def delete_inactive_elastic_beanstalk_versions(aws):
+    eb = aws.create_client("elasticbeanstalk", REGION)
+    app_versions = {}
+    for version in eb.describe_application_versions()["ApplicationVersions"]:
+        app_versions.setdefault(version["ApplicationName"], []).append(
+            (version["DateUpdated"], version["VersionLabel"])
+        )
+
+    for application, versions in app_versions.items():
+        for _, version in sorted(versions)[:-1]:
+            eb.delete_application_version(
+                ApplicationName=application, VersionLabel=version
+            )
 
 
 def delete_inactive_elasticache_instances(aws):
@@ -123,6 +138,7 @@ def main():
     delete_tsung_ec2_instances(aws)
     delete_inactive_elasticache_instances(aws)
     delete_inactive_elastic_beanstalk_deployments(aws)
+    delete_inactive_elastic_beanstalk_versions(aws)
 
     rds = aws.create_client("rds", REGION)
     delete_orphaned_databases(rds)
