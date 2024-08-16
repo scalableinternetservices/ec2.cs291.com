@@ -16,7 +16,7 @@ data "aws_ami" "ubuntu" {
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm-2.0.2021*-arm64-gp2"]  # Change "2.0.2021" to update to latest
+    values = ["amzn2-ami-hvm-2.0.2024*-arm64-gp2"]  # Change "2.0.2024" to update to latest
   }
 
   filter {
